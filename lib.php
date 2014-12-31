@@ -72,6 +72,7 @@ function block_grade_me_array($gradeables, $r) {
     $gradeables[$r->itemsortorder]['meta']['coursemoduleid'] = $r->coursemoduleid;
     $gradeables[$r->itemsortorder][$r->timesubmitted]['meta']['userid'] = $r->userid;
     $gradeables[$r->itemsortorder][$r->timesubmitted]['meta']['submissionid'] = $r->submissionid;
+	
     if (isset($r->forum_discussion_id)) {
         $gradeables[$r->itemsortorder][$r->timesubmitted]['meta']['forum_discussion_id'] = $r->forum_discussion_id;
     }
@@ -102,8 +103,12 @@ function block_grade_me_tree($course) {
     $gradebookicon = $OUTPUT->pix_icon('i/grades',$altgradebook,null,array('class' => 'gm_icon'));
     $courselink = $CFG->wwwroot.'/course/view.php?id='.$courseid;
     $coursetitle = get_string('link_gradebook','block_grade_me',array('course_name' => $coursename));
-
-    $text .= '<dt class="cmod"><a href="'.$gradebooklink.'">'.$gradebookicon.'</a> <a href="'.$courselink.'" title="'.$coursetitle.'">'.$coursename.'</a></dt>'."\n";
+	$text .= '<div>';
+	$text .= '<dt id="courseid'.$courseid.'" class="cmod">
+	<div class="toggle" onclick="$(\'dt#courseid'.$courseid.' > div.toggle\').toggleClass(\'open\');$(\'dt#courseid'.$courseid.' ~ dd\').toggleClass(\'block_grade_me_hide\');"></div>
+	<a href="'.$gradebooklink.'">'.$gradebookicon.'</a>
+	<a href="'.$courselink.'" title="'.$coursetitle.'">'.$coursename.'</a></dt>'."\n";
+	$text .= "\n";
 
     ksort($course);
 
@@ -128,13 +133,14 @@ function block_grade_me_tree($course) {
         $moduleicon = $OUTPUT->pix_icon('icon',$moduletitle,$itemmodule,array('class' => 'gm_icon'));
 
         $text .= '<dd id="cmid'.$coursemoduleid.'" class="module">'."\n";  //open module
-        $text .= '<a href="'.$gradelink.'" title="'.$moduletitle.'">'.$moduleicon.'</a>';
         $text .= '<div class="toggle" onclick="$(\'dd#cmid'.$coursemoduleid.' > div.toggle\').toggleClass(\'open\');$(\'dd#cmid'.$coursemoduleid.' > ul\').toggleClass(\'block_grade_me_hide\');"></div>'."\n";
+        $text .= '<a href="'.$gradelink.'" title="'.$moduletitle.'">'.$moduleicon.'</a>';
         $text .= '<a href="'.$modulelink.'" title="'.$moduletitle.'">'.$itemname.'</a> ('.count($item).')'."\n";
 
         $text .= '<ul class="block_grade_me_hide">'."\n";
 
         ksort($item);
+
 
         // Assign module needs to have a rownum
         $rownum = 0;
@@ -148,17 +154,24 @@ function block_grade_me_tree($course) {
             if ($itemmodule == 'assignment') {
                 $submissionlink .= '/mod/assignment/submissions.php?id='.$coursemoduleid.'&amp;userid='.$userid.'&amp;mode=single&amp;filter=0&amp;offset=0';
             } else if ($itemmodule == 'assign') {
-                $submissionlink .= "/mod/assign/view.php?id=$coursemoduleid&action=grade&rownum=$rownum&userid=$userid";
-                $rownum++;
+                //$submissionlink .= "/mod/assign/view.php?id=$coursemoduleid&rownum=$rownum&action=grade&userid=$userid&item=$iteminstance";
+				$submissionlink .= "/mod/assign/view.php?id=$coursemoduleid&action=grading";
+                //$rownum++;
             } else if ($itemmodule == 'data') {
-                $submissionlink .= '/mod/data/view.php?d='.$submissionid.'&amp;mode=single';
+                $submissionlink .= "/mod/data/view.php?rid=".$submissionid."&amp;mode=single";
             } else if ($itemmodule == 'forum') {
                 $forumdiscussionid = $submission['meta']['forum_discussion_id'];
                 $submissionlink .= '/mod/forum/discuss.php?d='.$forumdiscussionid.'#p'.$submissionid;
             } else if ($itemmodule == 'glossary') {
                 $submissionlink .= '/mod/glossary/view.php?id='.$coursemoduleid.'#postrating'.$submissionid;
+            } else if ($itemmodule == 'journal') {
+                $submissionlink .= '/mod/journal/report.php?id='.$coursemoduleid;
+			} else if ($itemmodule == 'lesson') {
+                $submissionlink .= '/mod/lesson/essay.php?id='.$coursemoduleid;
+			} else if ($itemmodule == 'pcast') {
+                $submissionlink .= '/mod/pcast/showepisode.php?eid='.$submissionid;
             } else if ($itemmodule == 'quiz') {
-                $submissionlink .= '/mod/quiz/report.php?q='.$submissionid.'&amp;mode=grading';
+                $submissionlink .= "/mod/quiz/report.php?id=".$coursemoduleid."&amp;mode=overview";
             }
 
             unset($submission['meta']);
@@ -183,6 +196,7 @@ function block_grade_me_tree($course) {
         $text .= '</ul>'."\n";
         $text .= '</dd>'."\n";  // close module
     }
-
+	$text .= '</div>';
+	
     return $text;
 }
